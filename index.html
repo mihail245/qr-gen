@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор и сканер QR-кодов</title>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Темная тема */
+        .dark-theme {
+            --light-color: #212529;
+            --dark-color: #f8f9fa;
+            --gray-color: #adb5bd;
+            --primary-color: #4895ef;
+            --primary-hover: #3a7bc8;
+            --secondary-color: #560bad;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .control-panel,
+        .dark-theme .qr-display,
+        .dark-theme .scanner-container {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+        }
+
+        .dark-theme input,
+        .dark-theme textarea,
+        .dark-theme select {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .dark-theme .history-list {
+            border-color: #444;
+        }
+
+        .dark-theme .history-item {
+            border-bottom-color: #444;
+        }
+
+        .dark-theme .qr-placeholder {
+            color: #777;
+        }
+
+        .dark-theme .qr-placeholder i {
+            color: #444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .qr-display {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .scanner-container {
+            width: 100%;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            margin-top: 2rem;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            transition: color 0.3s;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .color-picker-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .color-picker {
+            flex: 1;
+        }
+
+        .color-picker input {
+            height: 50px;
+            padding: 0.3rem;
+            cursor: pointer;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--gray-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #3ab5d8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #e5177b;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background-color: #e68a19;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        #qrcode {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
+            width: 100%;
+        }
+
+        .qr-placeholder {
+            text-align: center;
+            color: var(--gray-color);
+            padding: 2rem;
+            transition: color 0.3s;
+        }
+
+        .qr-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+            transition: color 0.3s;
+        }
+
+        .qr-info {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--gray-color);
+            transition: color 0.3s;
+        }
+
+        .qr-info.success {
+            color: var(--success-color);
+        }
+
+        .qr-info.error {
+            color: var(--danger-color);
+        }
+
+        .advanced-settings {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+            transition: border-color 0.3s;
+        }
+
+        .toggle-advanced {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+
+        .toggle-advanced i {
+            transition: var(--transition);
+        }
+
+        .advanced-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .advanced-content.show {
+            max-height: 500px;
+        }
+       .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(244, 67, 54, 0.8);
+            box-shadow: 0 0 10px rgba(244, 67, 54, 0.8);
+            animation: scan 2s linear infinite;
+        }
+
+        .size-presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .size-preset {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .size-preset:hover, .size-preset.active {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        .history-section {
+            margin-top: 2rem;
+        }
+
+        .history-list {
+            border: 1px solid #eee;
+            border-radius: var(--border-radius);
+            max-height: 200px;
+            overflow-y: auto;
+            transition: border-color 0.3s;
+        }
+
+        .history-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.3s;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item-content {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        .history-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .history-item-btn {
+            background: none;
+            border: none;
+            color: var(--gray-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .history-item-btn:hover {
+            color: var(--primary-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto;
+            color: var(--gray-color);
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        /* Стили для сканера */
+        #scanner {
+            width: 100%;
+            position: relative;
+            margin-top: 1rem;
+        }
+
+        #scanner-video {
+            width: 100%;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+
+        #scanner-canvas {
+            display: none;
+        }
+
+        #scanner-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            background-color: rgba(76, 201, 240, 0.1);
+            display: none;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .scanner-placeholder {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-color);
+        }
+
+        .scanner-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+        }
+
+        .scanner-active #scanner-video {
+            display: block;
+        }
+
+        .scanner-active .scanner-placeholder {
+            display: none;
+        }
+
+        .scanner-active #scanner-result {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .control-panel, .qr-display, .scanner-container {
+                min-width: 100%;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* Дополнительные стили для логотипа */
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            color: white;
+        }
+
+        /* Стили для переключателя темы */
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switcher">
+        <button class="theme-btn" id="themeToggle" title="Сменить тему">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-qrcode logo-icon"></i>
+                <h1>Генератор и сканер QR-кодов</h1>
+            </div>
+            <p>Создавайте и сканируйте QR-коды бесплатно</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="app-container">
+            <div class="control-panel">
+                <div class="tabs">
+                    <div class="tab active" data-tab="generator">Генератор</div>
+                    <div class="tab" data-tab="scanner">Сканер</div>
+                </div>
+                
+                <div class="tab-content active" id="generator-tab">
+                    <h2 class="section-title"><i class="fas fa-sliders-h"></i> Настройки</h2>
+                    
+                    <div class="form-group">
+                        <label for="qr-content">Содержимое QR-кода:</label>
+                        <textarea id="qr-content" placeholder="Введите текст, URL, контактную информацию или другие данные..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Размер QR-кода:</label>
+                        <select id="qr-size">
+                            <option value="100">100x100 пикселей</option>
+                            <option value="150">150x150 пикселей</option>
+                            <option value="200" selected>200x200 пикселей</option>
+                            <option value="250">250x250 пикселей</option>
+                            <option value="300">300x300 пикселей</option>
+                            <option value="400">400x400 пикселей</option>
+                        </select>
+                        
+                        <div class="size-presets">
+                            <div class="size-preset" data-size="100">Маленький</div>
+                            <div class="size-preset active" data-size="200">Средний</div>
+                            <div class="size-preset" data-size="300">Большой</div>
+                            <div class="size-preset" data-size="400">Очень большой</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Цвета:</label>
+                        <div class="color-picker-group">
+                            <div class="color-picker">
+                                <label for="qr-color">Цвет кода:</label>
+                                <input type="color" id="qr-color" value="#000000">
+                            </div>
+                            <div class="color-picker">
+                                <label for="qr-bg">Фон:</label>
+                                <input type="color" id="qr-bg" value="#ffffff">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qr-error">Коррекция ошибок:</label>
+                        <select id="qr-error">
+                            <option value="L">Низкая (7%) - меньше данных</option>
+                            <option value="M" selected>Средняя (15%) - хороший баланс</option>
+                            <option value="Q">Высокая (25%) - больше избыточности</option>
+                            <option value="H">Максимальная (30%) - лучшая защита</option>
+                        </select>
+                    </div>
+                    
+                    <button id="generate-btn" class="btn btn-success">
+                        <i class="fas fa-qrcode"></i> Сгенерировать QR-код
+                    </button>
+                    
+                    <div class="advanced-settings">
+                        <button class="toggle-advanced" id="toggleAdvanced">
+                            <i class="fas fa-chevron-down"></i> Дополнительные настройки
+                        </button>
+                        
+                        <div class="advanced-content" id="advancedContent">
+                            <div class="form-group">
+                                <label for="qr-margin">Отступы (в пикселях):</label>
+                                <input type="number" id="qr-margin" min="0" max="50" value="4">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="qr-format">Формат изображения:</label>
+                                <select id="qr-format">
+                                    <option value="png">PNG - Лучшее качество</option>
+                                    <option value="jpeg">JPEG - Меньший размер</option>
+                                    <option value="webp">WebP - Современный формат</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="qr-logo" checked> Добавить белые границы
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <h2 class="section-title"><i class="fas fa-history"></i> История</h2>
+                        <div class="history-list" id="historyList">
+                            <div class="history-empty">Здесь будут отображаться ваши последние QR-коды</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="scanner-tab">
+                    <h2 class="section-title"><i class="fas fa-camera"></i> Сканер QR-кодов</h2>
+                    
+                    <div id="scanner">
+                        <div class="scanner-placeholder">
+                            <i class="fas fa-camera"></i>
+                            <p>Нажмите "Запустить сканер" для начала сканирования</p>
+                        </div>
+                        <video id="scanner-video" playsinline></video>
+                        <canvas id="scanner-canvas"></canvas>
+                        
+                        <div id="scanner-result">
+                            <h3>Результат сканирования:</h3>
+                            <div id="scanner-result-content"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="start-scanner-btn" class="btn btn-success">
+                            <i class="fas fa-play"></i> Запустить сканер
+                        </button>
+                        <button id="stop-scanner-btn" class="btn btn-danger" disabled>
+                            <i class="fas fa-stop"></i> Остановить
+                        </button>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="upload-image-btn" class="btn btn-secondary">
+                            <i class="fas fa-upload"></i> Загрузить изображение
+                        </button>
+                        <input type="file" id="file-input" accept="image/*">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="qr-display">
+                <h2 class="section-title"><i class="fas fa-eye"></i> Превью</h2>
+                
+                <div id="qrcode">
+                    <div class="qr-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                        <p>QR-код появится здесь после генерации</p>
+                    </div>
+                </div>
+                
+                <div id="qr-message" class="qr-info">
+                    Введите данные и нажмите "Сгенерировать"
+                </div>
+                
+                <div class="btn-group">
+                    <button id="download-btn" class="btn" disabled>
+                        <i class="fas fa-download"></i> Скачать
+                    </button>
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Очистить
+                    </button>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="save-settings-btn" class="btn">
+                        <i class="fas fa-save"></i> Сохранить настройки
+                    </button>
+                    <button id="reset-settings-btn" class="btn btn-danger">
+                        <i class="fas fa-undo"></i> Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Генератор и сканер QR-кодов &copy; 2023 | Работает полностью в вашем браузере</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы интерфейса
+            const qrContent = document.getElementById('qr-content');
+            const qrSize = document.getElementById('qr-size');
+            const qrColor = document.getElementById('qr-color');
+            const qrBg = document.getElementById('qr-bg');
+            const qrError = document.getElementById('qr-error');
+            const qrMargin = document.getElementById('qr-margin');
+            const qrFormat = document.getElementById('qr-format');
+            const qrLogo = document.getElementById('qr-logo');
+            const generateBtn = document.getElementById('generate-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+            const resetSettingsBtn = document.getElementById('reset-settings-btn');
+            const toggleAdvancedBtn = document.getElementById('toggleAdvanced');
+            const advancedContent = document.getElementById('advancedContent');
+            const qrMessage = document.getElementById('qr-message');
+            const qrcodeDiv = document.getElementById('qrcode');
+            const historyList = document.getElementById('historyList');
+            const themeToggle = document.getElementById('themeToggle');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const startScannerBtn = document.getElementById('start-scanner-btn');
+            const stopScannerBtn = document.getElementById('stop-scanner-btn');
+            const uploadImageBtn = document.getElementById('upload-image-btn');
+            const fileInput = document.getElementById('file-input');
+            const scannerVideo = document.getElementById('scanner-video');
+            const scannerCanvas = document.getElementById('scanner-canvas');
+            const scannerResult = document.getElementById('scanner-result-content');
+            
+            // Переменные состояния
+            let currentQRCode = null;
+            let qrHistory = JSON.parse(localStorage.getItem('qrHistory')) || [];
+            let scannerStream = null;
+            let scanning = false;
+            let scanAnimationFrame = null;
+            
+            // Инициализация
+            loadSettings();
+            renderHistory();
+            checkEmptyHistory();
+            
+            // Проверяем сохраненную тему
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggle.querySelector('i').classList.remove('fa-moon');
+                themeToggle.querySelector('i').classList.add('fa-sun');
+            }
+            
+            // События
+            generateBtn.addEventListener('click', generateQRCode);
+            downloadBtn.addEventListener('click', downloadQRCode);
+            clearBtn.addEventListener('click', clearQRCode);
+            saveSettingsBtn.addEventListener('click', saveSettings);
+            resetSettingsBtn.addEventListener('click', resetSettings);
+            toggleAdvancedBtn.addEventListener('click', toggleAdvancedSettings);
+            themeToggle.addEventListener('click', toggleTheme);
+            startScannerBtn.addEventListener('click', startScanner);
+            stopScannerBtn.addEventListener('click', stopScanner);
+            uploadImageBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // Переключение вкладок
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.dataset.tab + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Останавливаем сканер при переключении вкладок
+                    if (tab.dataset.tab !== 'scanner' && scanning) {
+                        stopScanner();
+                    }
+                });
+            });
+            
+            // Преимущества для размеров
+            document.querySelectorAll('.size-preset').forEach(preset => {
+                preset.addEventListener('click', function() {
+                    document.querySelectorAll('.size-preset').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    qrSize.value = this.dataset.size;
+                });
+            });
+            
+            // Автоматическая генерация при изменении основных параметров
+            [qrSize, qrColor, qrBg, qrError].forEach(element => {
+                element.addEventListener('change', function() {
+                    if (qrContent.value.trim()) {
+                        generateQRCode();
+                    }
+                });
+            });
+            
+            // Функции генератора QR-кодов
+            function generateQRCode() {
+                const content = qrContent.value.trim();
+                
+                if (!content) {
+                    showMessage('Пожалуйста, введите текст или URL для генерации QR-кода', 'error');
+                    downloadBtn.disabled = true;
+                    return;
+                }
+                
+                // Очищаем предыдущий QR-код
+                qrcodeDiv.innerHTML = '';
+                
+                try {
+                    // Создаем новый QR-код
+                    currentQRCode = new QRCode(qrcodeDiv, {
+                        text: content,
+                        width: parseInt(qrSize.value),
+                        height: parseInt(qrSize.value),
+                        colorDark: qrColor.value,
+                        colorLight: qrBg.value,
+                        correctLevel: QRCode.CorrectLevel[qrError.value],
+                        margin: parseInt(qrMargin.value)
+                    });
+                    
+                    // Добавляем анимацию
+                    qrcodeDiv.classList.add('fade-in');
+                    setTimeout(() => qrcodeDiv.classList.remove('fade-in'), 500);
+                    
+                    showMessage('QR-код успешно сгенерирован!', 'success');
+                    downloadBtn.disabled = false;
+                    
+                    // Добавляем в историю
+                    addToHistory(content);
+                } catch (error) {
+                    showMessage('Ошибка при генерации QR-кода: ' + error.message, 'error');
+                    downloadBtn.disabled = true;
+                    console.error(error);
+                }
+            }
+            
+            function downloadQRCode() {
+                if (!currentQRCode) return;
+                
+                const canvas = qrcodeDiv.querySelector('canvas');
+                if (!canvas) {
+                    showMessage('Не удалось получить изображение QR-кода', 'error');
+                    return;
+                }
+                
+                const format = qrFormat.value;
+                let mimeType, extension;
+                
+                switch(format) {
+                    case 'jpeg':
+                        mimeType = 'image/jpeg';
+                        extension = 'jpg';
+                        break;
+                    case 'webp':
+                        mimeType = 'image/webp';
+                        extension = 'webp';
+                        break;
+                    default:
+                        mimeType = 'image/png';
+                        extension = 'png';
+                }
+                
+                // Создаем имя файла
+                const content = qrContent.value.trim();
+                let filename = 'qr-code';
+                
+                if (content.startsWith('http')) {
+                    try {
+                        const url = new URL(content);
+                        filename = url.hostname.replace('www.', '') + '-qr';
+                    } catch(e) {}
+                } else if (content.length < 20) {
+                    filename = content.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                }
+                
+                filename += '.' + extension;
+                
+                // Создаем временную ссылку для скачивания
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL(mimeType);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showMessage('QR-код скачан как ' + filename, 'success');
+            }
+            
+            function clearQRCode() {
+                qrContent.value = '';
+                qrcodeDiv.innerHTML = `
+                    <div class="qr-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                        <p>QR-код появится здесь после генерации</p>
+                    </div>
+                `;
+                showMessage('Введите данные и нажмите "Сгенерировать"');
+                downloadBtn.disabled = true;
+            }
+            
+            function showMessage(text, type = '') {
+                qrMessage.textContent = text;
+                qrMessage.className = 'qr-info';
+                if (type) qrMessage.classList.add(type);
+            }
+            
+            function addToHistory(content) {
+                // Проверяем, есть ли уже такой контент в истории
+                const existingIndex = qrHistory.findIndex(item => item.content === content);
+                
+                if (existingIndex !== -1) {
+                    // Обновляем дату существующей записи
+                    qrHistory[existingIndex].date = new Date().toISOString();
+                } else {
+                    // Добавляем новую запись
+                    qrHistory.unshift({
+                        content: content,
+                        date: new Date().toISOString(),
+                        settings: getCurrentSettings()
+                    });
+                    
+                    // Ограничиваем историю 10 последними записями
+                    if (qrHistory.length > 10) {
+                        qrHistory.pop();
+                    }
+                }
+                
+                // Сохраняем и обновляем отображение
+                saveHistory();
+                renderHistory();
+                checkEmptyHistory();
+            }
+            
+            function renderHistory() {
+                if (qrHistory.length === 0) return;
+                
+                historyList.innerHTML = '';
+                qrHistory.forEach((item, index) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'history-item-content';
+                    contentDiv.textContent = item.content;
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'history-item-actions';
+                    
+                    const loadBtn = document.createElement('button');
+                    loadBtn.className = 'history-item-btn';
+                    loadBtn.title = 'Загрузить';
+                    loadBtn.innerHTML = '<i class="fas fa-redo"></i>';
+                    loadBtn.addEventListener('click', () => loadFromHistory(index));
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'history-item-btn';
+                    deleteBtn.title = 'Удалить';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.addEventListener('click', () => deleteFromHistory(index));
+                    
+                    actionsDiv.appendChild(loadBtn);
+                    actionsDiv.appendChild(deleteBtn);
+                    
+                    historyItem.appendChild(contentDiv);
+                    historyItem.appendChild(actionsDiv);
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            function checkEmptyHistory() {
+                if (qrHistory.length === 0) {
+                    historyList.innerHTML = '<div class="history-empty">Здесь будут отображаться ваши последние QR-коды</div>';
+                }
+            }
+            
+            function loadFromHistory(index) {
+                const item = qrHistory[index];
+                qrContent.value = item.content;
+                
+                // Загружаем настройки, если они есть
+                if (item.settings) {
+                    applySettings(item.settings);
+                }
+                
+                generateQRCode();
+                showMessage('Загружено из истории', 'success');
+            }
+            
+            function deleteFromHistory(index) {
+                qrHistory.splice(index, 1);
+                saveHistory();
+                renderHistory();
+                checkEmptyHistory();
+                showMessage('Удалено из истории', 'success');
+            }
+            
+            function saveHistory() {
+                localStorage.setItem('qrHistory', JSON.stringify(qrHistory));
+            }
+            
+            function getCurrentSettings() {
+                return {
+                    size: qrSize.value,
+                    color: qrColor.value,
+                    bg: qrBg.value,
+                    error: qrError.value,
+                    margin: qrMargin.value,
+                    format: qrFormat.value,
+                    logo: qrLogo.checked
+                };
+            }
+            
+            function applySettings(settings) {
+                if (settings.size) qrSize.value = settings.size;
+                if (settings.color) qrColor.value = settings.color;
+                if (settings.bg) qrBg.value = settings.bg;
+                if (settings.error) qrError.value = settings.error;
+                if (settings.margin) qrMargin.value = settings.margin;
+                if (settings.format) qrFormat.value = settings.format;
+                if (settings.logo !== undefined) qrLogo.checked = settings.logo;
+                
+                // Обновляем активный пресет размера
+                document.querySelectorAll('.size-preset').forEach(preset => {
+                    preset.classList.remove('active');
+                    if (preset.dataset.size === settings.size) {
+                        preset.classList.add('active');
+                    }
+                });
+            }
+            
+            function saveSettings() {
+                const settings = getCurrentSettings();
+                localStorage.setItem('qrSettings', JSON.stringify(settings));
+                showMessage('Настройки сохранены', 'success');
+            }
+            
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('qrSettings');
+                if (savedSettings) {
+                    applySettings(JSON.parse(savedSettings));
+                }
+            }
+            
+            function resetSettings() {
+                if (confirm('Вы действительно хотите сбросить все настройки к значениям по умолчанию?')) {
+                    localStorage.removeItem('qrSettings');
+                    applySettings({
+                        size: '200',
+                        color: '#000000',
+                        bg: '#ffffff',
+                        error: 'M',
+                        margin: '4',
+                        format: 'png',
+                        logo: true
+                    });
+                    showMessage('Настройки сброшены', 'success');
+                }
+            }
+            
+            function toggleAdvancedSettings() {
+                const icon = toggleAdvancedBtn.querySelector('i');
+                advancedContent.classList.toggle('show');
+                
+                if (advancedContent.classList.contains('show')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+            
+            function toggleTheme() {
+                const icon = themeToggle.querySelector('i');
+                document.body.classList.toggle('dark-theme');
+                
+                if (document.body.classList.contains('dark-theme')) {
+                    localStorage.setItem('theme', 'dark');
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+            
+            // Функции сканера QR-кодов
+            async function startScanner() {
+                try {
+                    // Запрашиваем доступ к камере
+                    scannerStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' },
+                        audio: false
+                    });
+                    
+                    // Отображаем видео поток
+                    scannerVideo.srcObject = scannerStream;
+                    scannerVideo.play();
+                    
+                    // Добавляем класс для активного сканера
+                    document.getElementById('scanner').classList.add('scanner-active');
+                    
+                    // Обновляем состояние кнопок
+                    startScannerBtn.disabled = true;
+                    stopScannerBtn.disabled = false;
+                    scanning = true;
+                    
+                    // Запускаем обработку кадров
+                    scanAnimationFrame = requestAnimationFrame(scanFrame);
+                    
+                    showScannerMessage('Сканирование...', 'info');
+                } catch (error) {
+                    console.error('Ошибка доступа к камере:', error);
+                    showScannerMessage('Не удалось получить доступ к камере: ' + error.message, 'error');
+                }
+            }
+            
+            function stopScanner() {
+                if (!scanning) return;
+                
+                // Останавливаем поток камеры
+                if (scannerStream) {
+                    scannerStream.getTracks().forEach(track => track.stop());
+                    scannerStream = null;
+                }
+                
+                // Останавливаем обработку кадров
+                if (scanAnimationFrame) {
+                    cancelAnimationFrame(scanAnimationFrame);
+                    scanAnimationFrame = null;
+                }
+                
+                // Убираем класс активного сканера
+                document.getElementById('scanner').classList.remove('scanner-active');
+                
+                // Обновляем состояние кнопок
+                startScannerBtn.disabled = false;
+                stopScannerBtn.disabled = true;
+                scanning = false;
+                
+                showScannerMessage('Сканер остановлен', 'info');
+            }
+            
+            function scanFrame() {
+                if (!scanning) return;
+                
+                try {
+                    // Устанавливаем размеры canvas как у видео
+                    if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
+                        scannerCanvas.width = scannerVideo.videoWidth;
+                        scannerCanvas.height = scannerVideo.videoHeight;
+                        
+                        // Рисуем кадр на canvas
+                        const ctx = scannerCanvas.getContext('2d');
+                        ctx.drawImage(scannerVideo, 0, 0, scannerCanvas.width, scannerCanvas.height);
+                        
+                        // Получаем данные изображения для анализа
+                        const imageData = ctx.getImageData(0, 0, scannerCanvas.width, scannerCanvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: 'dontInvert',
+                        });
+                        
+                        // Если найден QR-код
+                        if (code) {
+                            showScannerResult(code.data);
+                            stopScanner();
+                        }
+                    }
+                    
+                    // Продолжаем обработку кадров
+                    scanAnimationFrame = requestAnimationFrame(scanFrame);
+                } catch (error) {
+                    console.error('Ошибка при сканировании:', error);
+                    stopScanner();
+                    showScannerMessage('Ошибка при сканировании: ' + error.message, 'error');
+                }
+            }
+            
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        try {
+                            // Создаем canvas для анализа
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // Анализируем изображение
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                                inversionAttempts: 'dontInvert',
+                            });
+                            
+                            if (code) {
+                                showScannerResult(code.data);
+                            } else {
+                                showScannerMessage('QR-код не найден на изображении', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Ошибка при обработке изображения:', error);
+                            showScannerMessage('Ошибка при обработке изображения: ' + error.message, 'error');
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                // Сбрасываем значение input, чтобы можно было загрузить тот же файл снова
+                event.target.value = '';
+            }
+            
+            function showScannerResult(data) {
+                scannerResult.innerHTML = '';
+                
+                // Проверяем, является ли содержимое URL
+                let content;
+                try {
+                    const url = new URL(data);
+                    content = `<p><strong>URL:</strong> <a href="${url.href}" target="_blank">${url.href}</a></p>`;
+                } catch (e) {
+                    content = `<p><strong>Текст:</strong> ${data}</p>`;
+                }
+                
+                // Добавляем кнопку копирования
+                content += `<button id="copy-result-btn" class="btn" style="margin-top: 10px;">
+                    <i class="fas fa-copy"></i> Копировать
+                </button>`;
+                
+                scannerResult.innerHTML = content;
+                
+                // Добавляем обработчик для кнопки копирования
+                document.getElementById('copy-result-btn').addEventListener('click', () => {
+                    navigator.clipboard.writeText(data).then(() => {
+                        const btn = document.getElementById('copy-result-btn');
+                        btn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
+                        btn.classList.add('btn-success');
+                        setTimeout(() => {
+                            btn.innerHTML = '<i class="fas fa-copy"></i> Копировать';
+                            btn.classList.remove('btn-success');
+                        }, 2000);
+                    });
+                });
+                
+                // Показываем результат
+                document.getElementById('scanner-result').style.display = 'block';
+                showScannerMessage('QR-код успешно распознан!', 'success');
+            }
+            
+            function showScannerMessage(text, type = '') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'qr-info';
+                if (type) messageDiv.classList.add(type);
+                messageDiv.textContent = text;
+                
+                const existingMessage = document.querySelector('#scanner-result .qr-info');
+                if (existingMessage) {
+                    existingMessage.replaceWith(messageDiv);
+                } else {
+                    document.getElementById('scanner-result').prepend(messageDiv);
+                }
+            }
+            
+            // Останавливаем сканер при закрытии страницы
+            window.addEventListener('beforeunload', stopScanner);
+        });
+    </script>
+</body>
+</html>
