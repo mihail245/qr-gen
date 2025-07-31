@@ -1,474 +1,166 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator Pro</title>
-    <!-- Firebase SDK -->
+    <title>Генератор QR-кодов</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-    <!-- IP Geolocation -->
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <!-- UI Framework -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --primary-color: #4e73df;
-            --secondary-color: #1cc88a;
-            --dark-color: #5a5c69;
-            --light-color: #f8f9fc;
-        }
-        
         body {
-            font-family: 'Nunito', sans-serif;
-            background-color: var(--light-color);
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
         }
-        
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary-color) 0%, #224abe 100%);
-            min-height: 100vh;
-            transition: all 0.3s;
+        .hidden {
+            display: none;
         }
-        
-        .sidebar-brand {
-            height: 4.375rem;
-            text-decoration: none;
-            font-size: 1.2rem;
-            font-weight: 800;
-            padding: 1.5rem 1rem;
-            text-align: center;
-            letter-spacing: 0.05rem;
-            z-index: 1;
-            color: white;
-        }
-        
-        .nav-item {
-            position: relative;
-        }
-        
-        .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .nav-link:hover {
-            color: white;
-        }
-        
-        .nav-link i {
-            font-size: 0.85rem;
-            margin-right: 0.25rem;
-        }
-        
-        .active {
-            color: white !important;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
-        
-        .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 1rem 1.35rem;
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-success {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-        
         .qr-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
-        
         #qrcode {
             margin: 0 auto;
-            padding: 10px;
         }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-        
-        .admin-badge {
-            background-color: #f6c23e;
-            color: #000;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.2rem 0.5rem;
-            border-radius: 0.35rem;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
         .login-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 2rem;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-top: 5rem;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .user-info-card {
-            border-left: 0.25rem solid var(--primary-color);
-        }
-        
-        .qr-info-card {
-            border-left: 0.25rem solid var(--secondary-color);
-        }
-        
-        .stat-card {
-            border-radius: 0.35rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .stat-card i {
-            font-size: 2rem;
-            opacity: 0.3;
-        }
-        
-        .stat-card-primary {
-            background-color: #e6e6f2;
-            color: var(--primary-color);
-        }
-        
-        .stat-card-success {
-            background-color: #e6f2ed;
-            color: var(--secondary-color);
-        }
-        
-        .stat-card-warning {
-            background-color: #f2eee6;
-            color: #f6c23e;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <!-- Login Section -->
+    <!-- Форма входа -->
     <div id="login-section" class="container">
         <div class="login-container">
-            <h2 class="text-center mb-4">QR Code Generator Pro</h2>
+            <h2 class="text-center mb-4">Генератор QR-кодов</h2>
             <div class="mb-3">
                 <label for="login-email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="login-email" placeholder="name@example.com">
+                <input type="email" class="form-control" id="login-email">
             </div>
             <div class="mb-3">
-                <label for="login-password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="login-password" placeholder="Password">
+                <label for="login-password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="login-password">
             </div>
-            <button id="login-btn" class="btn btn-primary w-100 mb-3">Login</button>
-            <button id="register-btn" class="btn btn-outline-secondary w-100">Register</button>
+            <button id="login-btn" class="btn btn-primary w-100 mb-3">Войти</button>
+            <button id="register-btn" class="btn btn-outline-secondary w-100">Регистрация</button>
             <div id="login-message" class="mt-3 text-center"></div>
         </div>
     </div>
 
-    <!-- Registration Modal -->
-    <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+    <!-- Форма регистрации -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create Account</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Регистрация</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="register-name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="register-name" placeholder="John Doe">
+                        <label for="register-name" class="form-label">Имя</label>
+                        <input type="text" class="form-control" id="register-name">
                     </div>
                     <div class="mb-3">
                         <label for="register-email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="register-email" placeholder="name@example.com">
+                        <input type="email" class="form-control" id="register-email">
                     </div>
                     <div class="mb-3">
-                        <label for="register-password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="register-password" placeholder="Password">
-                    </div>
-                    <div class="mb-3">
-                        <label for="register-confirm" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="register-confirm" placeholder="Confirm Password">
+                        <label for="register-password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="register-password">
                     </div>
                     <div id="register-message" class="mb-3 text-center"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="submit-register" class="btn btn-primary">Register</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" id="submit-register" class="btn btn-primary">Зарегистрироваться</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main App Section (Hidden Initially) -->
-    <div id="app-section" class="hidden">
-        <div class="d-flex">
-            <!-- Sidebar -->
-            <div class="sidebar" id="sidebar">
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
-                    <i class="bi bi-qr-code-scan mr-2"></i>
-                    <span>QR Pro</span>
-                </a>
-                <hr class="sidebar-divider my-0">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#" id="dashboard-link">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="generator-link">
-                        <i class="bi bi-qr-code"></i>
-                        <span>QR Generator</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="history-link">
-                        <i class="bi bi-clock-history"></i>
-                        <span>My QR Codes</span>
-                    </a>
-                </li>
-                <div id="admin-links" class="hidden">
-                    <hr class="sidebar-divider">
-                    <div class="sidebar-heading">
-                        Admin
+    <!-- Основное приложение -->
+    <div id="app-section" class="hidden container mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">Меню</div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <a href="#" id="dashboard-link">Главная</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="#" id="generator-link">Генератор QR</a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="#" id="history-link">Мои QR-коды</a>
+                            </li>
+                            <div id="admin-links" class="hidden">
+                                <li class="list-group-item">
+                                    <a href="#" id="users-link">Пользователи</a>
+                                </li>
+                            </div>
+                            <li class="list-group-item">
+                                <a href="#" id="logout-link">Выход</a>
+                            </li>
+                        </ul>
                     </div>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="users-link">
-                            <i class="bi bi-people"></i>
-                            <span>User Management</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="analytics-link">
-                            <i class="bi bi-graph-up"></i>
-                            <span>Analytics</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="settings-link">
-                            <i class="bi bi-gear"></i>
-                            <span>Settings</span>
-                        </a>
-                    </li>
                 </div>
-                <hr class="sidebar-divider">
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="profile-link">
-                        <i class="bi bi-person"></i>
-                        <span>Profile</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" id="logout-link">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
             </div>
-
-            <!-- Main Content -->
-            <div class="container-fluid p-4 flex-grow-1">
-                <!-- Dashboard Section -->
+            
+            <div class="col-md-9">
+                <!-- Главная -->
                 <div id="dashboard-content">
-                    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
-                    <div class="row mb-4">
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="stat-card stat-card-primary">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="fw-bold">Total QR Codes</h5>
-                                        <h3 id="total-qr-count" class="mb-0">0</h3>
-                                    </div>
-                                    <div>
-                                        <i class="bi bi-qr-code"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="stat-card stat-card-success">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="fw-bold">Your QR Codes</h5>
-                                        <h3 id="user-qr-count" class="mb-0">0</h3>
-                                    </div>
-                                    <div>
-                                        <i class="bi bi-person-badge"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="stat-card stat-card-warning">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="fw-bold">Total Users</h5>
-                                        <h3 id="total-user-count" class="mb-0">0</h3>
-                                    </div>
-                                    <div>
-                                        <i class="bi bi-people"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="stat-card">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="fw-bold">Today's Activity</h5>
-                                        <h3 id="today-activity" class="mb-0">0</h3>
-                                    </div>
-                                    <div>
-                                        <i class="bi bi-activity"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <div class="card user-info-card">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Your Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <img id="user-avatar-img" src="https://ui-avatars.com/api/?name=U" class="user-avatar me-3">
-                                        <div>
-                                            <h5 id="user-fullname" class="mb-0">User Name</h5>
-                                            <span id="user-email" class="text-muted">user@example.com</span>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Account Created:</strong> <span id="account-created">-</span></p>
-                                            <p><strong>Last Login:</strong> <span id="last-login">-</span></p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>User Role:</strong> <span id="user-role">User</span></p>
-                                            <p><strong>IP Address:</strong> <span id="user-ip">-</span></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6 mb-4">
-                            <div class="card qr-info-card">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Recent QR Codes</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Type</th>
-                                                    <th>Content</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="recent-qr-table">
-                                                <tr>
-                                                    <td colspan="3" class="text-center">No recent QR codes</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                    <h3>Главная</h3>
+                    <div class="card mb-4">
+                        <div class="card-header">Информация</div>
+                        <div class="card-body">
+                            <p>Добро пожаловать, <span id="user-name"></span>!</p>
+                            <p>Email: <span id="user-email-display"></span></p>
+                            <p>Роль: <span id="user-role"></span></p>
                         </div>
                     </div>
                 </div>
 
-                <!-- QR Generator Section -->
+                <!-- Генератор QR -->
                 <div id="generator-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">QR Code Generator</h1>
+                    <h3>Генератор QR-кодов</h3>
                     <div class="row">
-                        <div class="col-lg-6">
+                        <div class="col-md-6">
                             <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Generate QR Code</h6>
-                                </div>
+                                <div class="card-header">Настройки</div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label for="qr-content" class="form-label">Content</label>
-                                        <textarea class="form-control" id="qr-content" rows="3" placeholder="Enter text, URL, or other content"></textarea>
+                                        <label for="qr-content" class="form-label">Содержимое</label>
+                                        <textarea class="form-control" id="qr-content" rows="3"></textarea>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="qr-type" class="form-label">QR Code Type</label>
-                                        <select class="form-select" id="qr-type">
-                                            <option value="text">Text</option>
-                                            <option value="url">URL</option>
-                                            <option value="email">Email</option>
-                                            <option value="phone">Phone</option>
-                                            <option value="sms">SMS</option>
-                                            <option value="wifi">WiFi</option>
-                                            <option value="vcard">vCard</option>
-                                        </select>
+                                        <label for="qr-size" class="form-label">Размер</label>
+                                        <input type="range" class="form-range" min="100" max="500" id="qr-size" value="200">
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="qr-color" class="form-label">Color</label>
-                                        <input type="color" class="form-control form-control-color" id="qr-color" value="#000000">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="qr-size" class="form-label">Size</label>
-                                        <input type="range" class="form-range" min="100" max="500" step="50" id="qr-size" value="200">
-                                        <div class="text-center"><span id="size-value">200</span>px</div>
-                                    </div>
-                                    <button id="generate-btn" class="btn btn-primary">Generate QR Code</button>
+                                    <button id="generate-btn" class="btn btn-primary">Создать QR-код</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-md-6">
                             <div class="card">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">QR Code Preview</h6>
-                                </div>
+                                <div class="card-header">Результат</div>
                                 <div class="card-body text-center">
                                     <div class="qr-container">
                                         <div id="qrcode"></div>
                                     </div>
                                     <div class="mt-3">
-                                        <button id="download-png" class="btn btn-outline-primary me-2" disabled>
-                                            <i class="bi bi-download"></i> PNG
-                                        </button>
-                                        <button id="download-svg" class="btn btn-outline-primary me-2" disabled>
-                                            <i class="bi bi-download"></i> SVG
-                                        </button>
-                                        <button id="save-qr" class="btn btn-success" disabled>
-                                            <i class="bi bi-save"></i> Save QR
-                                        </button>
+                                        <button id="download-png" class="btn btn-outline-primary me-2" disabled>Скачать PNG</button>
+                                        <button id="save-qr" class="btn btn-success" disabled>Сохранить</button>
                                     </div>
                                 </div>
                             </div>
@@ -476,406 +168,60 @@
                     </div>
                 </div>
 
-                <!-- History Section -->
+                <!-- История QR -->
                 <div id="history-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">My QR Codes</h1>
+                    <h3>Мои QR-коды</h3>
                     <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold">Generated QR Codes</h6>
-                            <div>
-                                <input type="text" id="history-search" class="form-control form-control-sm" placeholder="Search...">
-                            </div>
-                        </div>
+                        <div class="card-header">История</div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Type</th>
-                                            <th>Content</th>
-                                            <th>Size</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="qr-history-table">
-                                        <tr>
-                                            <td colspan="5" class="text-center">No QR codes generated yet</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center" id="history-pagination">
-                                    <!-- Pagination will be added dynamically -->
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Admin - User Management Section -->
-                <div id="users-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">User Management</h1>
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold">All Users</h6>
-                            <button class="btn btn-sm btn-primary" id="add-user-btn">
-                                <i class="bi bi-plus"></i> Add User
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Role</th>
-                                            <th>Created</th>
-                                            <th>Last Login</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="users-table">
-                                        <tr>
-                                            <td colspan="7" class="text-center">Loading users...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center" id="users-pagination">
-                                    <!-- Pagination will be added dynamically -->
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Admin - Analytics Section -->
-                <div id="analytics-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">Analytics Dashboard</h1>
-                    <div class="row mb-4">
-                        <div class="col-lg-8">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">QR Code Generation Activity</h6>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="qr-activity-chart" height="300"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">QR Code Types</h6>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="qr-types-chart" height="300"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">User Locations</h6>
-                        </div>
-                        <div class="card-body">
-                            <div id="user-location-map" style="height: 400px; width: 100%;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Admin - Settings Section -->
-                <div id="settings-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">System Settings</h1>
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Application Settings</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label for="app-name" class="form-label">Application Name</label>
-                                        <input type="text" class="form-control" id="app-name" value="QR Code Generator Pro">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="admin-email" class="form-label">Admin Email</label>
-                                        <input type="email" class="form-control" id="admin-email" value="alway6offline@gmail.com">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="qr-default-size" class="form-label">Default QR Size</label>
-                                        <input type="number" class="form-control" id="qr-default-size" value="200">
-                                    </div>
-                                    <div class="mb-3 form-check">
-                                        <input type="checkbox" class="form-check-input" id="user-registration" checked>
-                                        <label class="form-check-label" for="user-registration">Allow User Registration</label>
-                                    </div>
-                                    <button id="save-settings" class="btn btn-primary">Save Settings</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">System Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <p><strong>Firebase Project:</strong> <span id="firebase-project">registr-f6a15</span></p>
-                                        <p><strong>Database:</strong> Firestore</p>
-                                        <p><strong>Last Backup:</strong> <span id="last-backup">-</span></p>
-                                    </div>
-                                    <div class="mb-3">
-                                        <button id="backup-btn" class="btn btn-outline-secondary me-2">
-                                            <i class="bi bi-database"></i> Backup Data
-                                        </button>
-                                        <button id="restore-btn" class="btn btn-outline-secondary">
-                                            <i class="bi bi-arrow-counterclockwise"></i> Restore
-                                        </button>
-                                    </div>
-                                    <hr>
-                                    <div class="mb-3">
-                                        <h6>About</h6>
-                                        <p>QR Code Generator Pro v1.0.0</p>
-                                        <p>Developed by Your Company</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Profile Section -->
-                <div id="profile-content" class="hidden">
-                    <h1 class="h3 mb-4 text-gray-800">User Profile</h1>
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Profile Picture</h6>
-                                </div>
-                                <div class="card-body text-center">
-                                    <img id="profile-avatar" src="https://ui-avatars.com/api/?name=U" class="rounded-circle mb-3" width="150" height="150">
-                                    <div class="small font-italic text-muted mb-4">JPG or PNG no larger than 5 MB</div>
-                                    <input type="file" id="avatar-upload" class="d-none" accept="image/*">
-                                    <button class="btn btn-primary" id="change-avatar-btn">
-                                        <i class="bi bi-upload"></i> Upload New Photo
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-8">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Account Details</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="profile-form">
-                                        <div class="row mb-3">
-                                            <div class="col-sm-6">
-                                                <label for="profile-firstname" class="form-label">First Name</label>
-                                                <input type="text" class="form-control" id="profile-firstname">
-                                            </div>
-                                            <div class="col-sm-6">
-                                                <label for="profile-lastname" class="form-label">Last Name</label>
-                                                <input type="text" class="form-control" id="profile-lastname">
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="profile-email" class="form-label">Email</label>
-                                            <input type="email" class="form-control" id="profile-email">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="profile-phone" class="form-label">Phone Number</label>
-                                            <input type="tel" class="form-control" id="profile-phone">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="profile-company" class="form-label">Company</label>
-                                            <input type="text" class="form-control" id="profile-company">
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                                    </form>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold">Change Password</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="password-form">
-                                        <div class="mb-3">
-                                            <label for="current-password" class="form-label">Current Password</label>
-                                            <input type="password" class="form-control" id="current-password">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="new-password" class="form-label">New Password</label>
-                                            <input type="password" class="form-control" id="new-password">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="confirm-password" class="form-label">Confirm Password</label>
-                                            <input type="password" class="form-control" id="confirm-password">
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Update Password</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="add-user-form">
-                        <div class="mb-3">
-                            <label for="add-user-name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="add-user-name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="add-user-email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="add-user-email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="add-user-password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="add-user-password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="add-user-role" class="form-label">Role</label>
-                            <select class="form-select" id="add-user-role" required>
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <div id="add-user-message" class="mb-3 text-center"></div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="submit-add-user" class="btn btn-primary">Create User</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit User Modal -->
-    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-user-form">
-                        <input type="hidden" id="edit-user-id">
-                        <div class="mb-3">
-                            <label for="edit-user-name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="edit-user-name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit-user-email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="edit-user-email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit-user-role" class="form-label">Role</label>
-                            <select class="form-select" id="edit-user-role" required>
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="edit-user-active">
-                            <label class="form-check-label" for="edit-user-active">Active</label>
-                        </div>
-                        <div id="edit-user-message" class="mb-3 text-center"></div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="submit-edit-user" class="btn btn-primary">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- View QR Modal -->
-    <div class="modal fade" id="viewQrModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">QR Code Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 text-center">
-                            <div id="modal-qrcode" class="mb-3"></div>
-                            <div>
-                                <button id="modal-download-png" class="btn btn-outline-primary me-2">
-                                    <i class="bi bi-download"></i> PNG
-                                </button>
-                                <button id="modal-download-svg" class="btn btn-outline-primary">
-                                    <i class="bi bi-download"></i> SVG
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th>Generated On</th>
-                                    <td id="modal-qr-date">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Type</th>
-                                    <td id="modal-qr-type">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Content</th>
-                                    <td id="modal-qr-content">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Size</th>
-                                    <td id="modal-qr-size">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Color</th>
-                                    <td id="modal-qr-color">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Generated By</th>
-                                    <td id="modal-qr-user">-</td>
-                                </tr>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Содержимое</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="qr-history-table">
+                                    <tr>
+                                        <td colspan="3" class="text-center">Нет сохраненных QR-кодов</td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                <!-- Управление пользователями -->
+                <div id="users-content" class="hidden">
+                    <h3>Управление пользователями</h3>
+                    <div class="card mb-4">
+                        <div class="card-header">Пользователи</div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Имя</th>
+                                        <th>Email</th>
+                                        <th>Роль</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table">
+                                    <tr>
+                                        <td colspan="3" class="text-center">Загрузка...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=visualization"></script>
     <script>
-        // Firebase Configuration
+        // Конфигурация Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBHsEBhMrk8aHrIYYwYEGC-wRlaPxSyyr0",
             authDomain: "registr-f6a15.firebaseapp.com",
@@ -885,66 +231,46 @@
             appId: "1:28854335183:web:8bdb2b09d42850be4c29ba"
         };
 
-        // Initialize Firebase
+        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        // Global variables
+        // Переменные
         let currentUser = null;
         let userData = null;
-        let qrHistory = [];
-        let allUsers = [];
-        let allQRCodes = [];
-        let userIP = '';
-        let userLocation = {};
 
-        // DOM Elements
+        // Элементы
         const loginSection = document.getElementById('login-section');
         const appSection = document.getElementById('app-section');
         const loginBtn = document.getElementById('login-btn');
         const registerBtn = document.getElementById('register-btn');
-        const loginEmail = document.getElementById('login-email');
-        const loginPassword = document.getElementById('login-password');
-        const loginMessage = document.getElementById('login-message');
+        const logoutLink = document.getElementById('logout-link');
         const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
         const submitRegister = document.getElementById('submit-register');
-        const logoutLink = document.getElementById('logout-link');
         const adminLinks = document.getElementById('admin-links');
-        const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
-        const editUserModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        const viewQrModal = new bootstrap.Modal(document.getElementById('viewQrModal'));
 
-        // Content sections
-        const contentSections = {
+        // Разделы
+        const sections = {
             dashboard: document.getElementById('dashboard-content'),
             generator: document.getElementById('generator-content'),
             history: document.getElementById('history-content'),
-            users: document.getElementById('users-content'),
-            analytics: document.getElementById('analytics-content'),
-            settings: document.getElementById('settings-content'),
-            profile: document.getElementById('profile-content')
+            users: document.getElementById('users-content')
         };
 
-        // Navigation links
+        // Навигация
         const navLinks = {
             dashboard: document.getElementById('dashboard-link'),
             generator: document.getElementById('generator-link'),
             history: document.getElementById('history-link'),
-            users: document.getElementById('users-link'),
-            analytics: document.getElementById('analytics-link'),
-            settings: document.getElementById('settings-link'),
-            profile: document.getElementById('profile-link')
+            users: document.getElementById('users-link')
         };
 
-        // Initialize the application
+        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
-            // Check auth state
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
-                    getUserIP();
                     loadUserData();
                     showApp();
                 } else {
@@ -952,313 +278,132 @@
                 }
             });
 
-            // Event listeners
+            // События
             loginBtn.addEventListener('click', handleLogin);
             registerBtn.addEventListener('click', () => registerModal.show());
             submitRegister.addEventListener('click', handleRegister);
             logoutLink.addEventListener('click', handleLogout);
 
-            // Navigation
+            // Навигация
             Object.keys(navLinks).forEach(key => {
-                navLinks[key].addEventListener('click', () => showContent(key));
+                navLinks[key].addEventListener('click', () => showSection(key));
             });
 
-            // QR Generator
+            // Генератор QR
             document.getElementById('generate-btn').addEventListener('click', generateQRCode);
-            document.getElementById('qr-size').addEventListener('input', updateSizeValue);
             document.getElementById('download-png').addEventListener('click', downloadPNG);
-            document.getElementById('download-svg').addEventListener('click', downloadSVG);
             document.getElementById('save-qr').addEventListener('click', saveQRCode);
-
-            // User Management
-            document.getElementById('add-user-btn').addEventListener('click', () => addUserModal.show());
-            document.getElementById('submit-add-user').addEventListener('click', addNewUser);
-
-            // Profile
-            document.getElementById('change-avatar-btn').addEventListener('click', () => document.getElementById('avatar-upload').click());
-            document.getElementById('avatar-upload').addEventListener('change', uploadAvatar);
-            document.getElementById('profile-form').addEventListener('submit', updateProfile);
-            document.getElementById('password-form').addEventListener('submit', updatePassword);
         });
 
-        // Show login section
+        // Показать форму входа
         function showLogin() {
             loginSection.classList.remove('hidden');
             appSection.classList.add('hidden');
-            loginEmail.value = '';
-            loginPassword.value = '';
-            loginMessage.textContent = '';
         }
 
-        // Show app section
+        // Показать приложение
         function showApp() {
             loginSection.classList.add('hidden');
             appSection.classList.remove('hidden');
-            showContent('dashboard');
+            showSection('dashboard');
         }
 
-        // Show content section
-        function showContent(section) {
-            // Hide all content sections
-            Object.values(contentSections).forEach(el => el.classList.add('hidden'));
+        // Показать раздел
+        function showSection(section) {
+            Object.values(sections).forEach(el => el.classList.add('hidden'));
+            sections[section].classList.remove('hidden');
             
-            // Remove active class from all nav links
-            Object.values(navLinks).forEach(el => el.classList.remove('active'));
-            
-            // Show selected section and set active nav link
-            contentSections[section].classList.remove('hidden');
-            navLinks[section].classList.add('active');
-            
-            // Load section-specific data
-            switch(section) {
-                case 'dashboard':
-                    loadDashboard();
-                    break;
-                case 'generator':
-                    // Already handled by event listeners
-                    break;
-                case 'history':
-                    loadQRHistory();
-                    break;
-                case 'users':
-                    loadAllUsers();
-                    break;
-                case 'analytics':
-                    loadAnalytics();
-                    break;
-                case 'settings':
-                    // Already handled by event listeners
-                    break;
-                case 'profile':
-                    loadProfile();
-                    break;
-            }
+            if (section === 'history') loadQRHistory();
+            if (section === 'users') loadAllUsers();
         }
 
-        // Handle login
+        // Вход
         async function handleLogin() {
-            const email = loginEmail.value;
-            const password = loginPassword.value;
-            
-            if (!email || !password) {
-                loginMessage.textContent = 'Please enter both email and password';
-                loginMessage.style.color = 'red';
-                return;
-            }
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const message = document.getElementById('login-message');
             
             try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
-                
-                // Update last login time
-                await db.collection('users').doc(currentUser.uid).update({
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastIP: userIP,
-                    lastLocation: userLocation
-                });
-                
-                showApp();
-            } catch (error) {
-                loginMessage.textContent = error.message;
-                loginMessage.style.color = 'red';
-            }
-        }
-
-        // Handle registration
-        async function handleRegister() {
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirm = document.getElementById('register-confirm').value;
-            const message = document.getElementById('register-message');
-            
-            if (!name || !email || !password || !confirm) {
-                message.textContent = 'Please fill in all fields';
-                message.style.color = 'red';
-                return;
-            }
-            
-            if (password !== confirm) {
-                message.textContent = 'Passwords do not match';
-                message.style.color = 'red';
-                return;
-            }
-            
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
-                
-                // Save additional user data
-                await db.collection('users').doc(currentUser.uid).set({
-                    name: name,
-                    email: email,
-                    role: 'user',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastIP: userIP,
-                    lastLocation: userLocation,
-                    active: true
-                });
-                
-                registerModal.hide();
-                showApp();
+                await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
                 message.textContent = error.message;
                 message.style.color = 'red';
             }
         }
 
-        // Handle logout
-        function handleLogout() {
-            auth.signOut().then(() => {
-                currentUser = null;
-                showLogin();
-            });
-        }
-
-        // Get user IP and location
-        async function getUserIP() {
+        // Регистрация
+        async function handleRegister() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const message = document.getElementById('register-message');
+            
             try {
-                const response = await axios.get('https://ipapi.co/json/');
-                userIP = response.data.ip;
-                userLocation = {
-                    city: response.data.city,
-                    region: response.data.region,
-                    country: response.data.country_name,
-                    latitude: response.data.latitude,
-                    longitude: response.data.longitude
-                };
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    name: name,
+                    email: email,
+                    role: 'user',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                registerModal.hide();
             } catch (error) {
-                console.error('Error getting IP info:', error);
-                userIP = 'Unknown';
+                message.textContent = error.message;
+                message.style.color = 'red';
             }
         }
 
-        // Load user data
+        // Выход
+        function handleLogout() {
+            auth.signOut();
+        }
+
+        // Загрузка данных пользователя
         async function loadUserData() {
             const userDoc = await db.collection('users').doc(currentUser.uid).get();
             userData = userDoc.data();
             
-            // Update UI with user data
-            document.getElementById('user-fullname').textContent = userData.name;
-            document.getElementById('user-email').textContent = userData.email;
-            document.getElementById('user-role').textContent = userData.role.charAt(0).toUpperCase() + userData.role.slice(1);
-            document.getElementById('user-ip').textContent = userIP;
+            document.getElementById('user-name').textContent = userData.name;
+            document.getElementById('user-email-display').textContent = userData.email;
+            document.getElementById('user-role').textContent = userData.role;
             
-            // Format dates
-            const createdAt = userData.createdAt.toDate();
-            document.getElementById('account-created').textContent = createdAt.toLocaleString();
-            
-            if (userData.lastLogin) {
-                const lastLogin = userData.lastLogin.toDate();
-                document.getElementById('last-login').textContent = lastLogin.toLocaleString();
-            }
-            
-            // Set avatar
-            document.getElementById('user-avatar-img').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}`;
-            document.getElementById('profile-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}`;
-            
-            // Show admin links if user is admin
             if (userData.role === 'admin') {
                 adminLinks.classList.remove('hidden');
             }
         }
 
-        // Load dashboard data
-        async function loadDashboard() {
-            // Get user's QR codes count
-            const userQRSnapshot = await db.collection('qrcodes')
-                .where('userId', '==', currentUser.uid)
-                .get();
-            document.getElementById('user-qr-count').textContent = userQRSnapshot.size;
-            
-            // Get total QR codes count (admin only)
-            if (userData.role === 'admin') {
-                const totalQRSnapshot = await db.collection('qrcodes').get();
-                document.getElementById('total-qr-count').textContent = totalQRSnapshot.size;
-                
-                const usersSnapshot = await db.collection('users').get();
-                document.getElementById('total-user-count').textContent = usersSnapshot.size;
-            }
-            
-            // Get recent QR codes
-            const recentQRSnapshot = await db.collection('qrcodes')
-                .where('userId', '==', currentUser.uid)
-                .orderBy('createdAt', 'desc')
-                .limit(5)
-                .get();
-            
-            const recentQRTable = document.getElementById('recent-qr-table');
-            recentQRTable.innerHTML = '';
-            
-            if (recentQRSnapshot.empty) {
-                recentQRTable.innerHTML = '<tr><td colspan="3" class="text-center">No recent QR codes</td></tr>';
-            } else {
-                recentQRSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${data.createdAt.toDate().toLocaleDateString()}</td>
-                        <td>${data.type}</td>
-                        <td class="text-truncate" style="max-width: 150px;">${data.content}</td>
-                    `;
-                    row.addEventListener('click', () => viewQRCode(doc.id, data));
-                    recentQRTable.appendChild(row);
-                });
-            }
-        }
-
-        // Generate QR code
+        // Генерация QR-кода
         function generateQRCode() {
             const content = document.getElementById('qr-content').value;
-            const type = document.getElementById('qr-type').value;
-            const color = document.getElementById('qr-color').value.replace('#', '');
             const size = parseInt(document.getElementById('qr-size').value);
             
             if (!content) {
-                alert('Please enter content for the QR code');
+                alert('Введите содержимое для QR-кода');
                 return;
             }
             
-            // Generate QR code
             const qr = qrcode(0, 'L');
             qr.addData(content);
             qr.make();
             
-            // Display QR code
             const qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = qr.createImgTag(4, 0);
             
-            // Apply color
             const img = qrContainer.querySelector('img');
             img.style.width = `${size}px`;
             img.style.height = `${size}px`;
-            img.style.filter = `brightness(0) saturate(100%) invert(16%) sepia(99%) saturate(7404%) hue-rotate(358deg) brightness(95%) contrast(112%)`;
-            // Note: The above filter converts to the selected color - this is a simplified version
             
-            // Enable download buttons
             document.getElementById('download-png').disabled = false;
-            document.getElementById('download-svg').disabled = false;
             document.getElementById('save-qr').disabled = false;
             
-            // Store current QR data for saving
             currentQR = {
                 content,
-                type,
-                color,
                 size,
-                svg: qr.createSvgTag(4, 0),
                 img: img.outerHTML
             };
         }
 
-        // Update size value display
-        function updateSizeValue() {
-            const size = document.getElementById('qr-size').value;
-            document.getElementById('size-value').textContent = size;
-        }
-
-        // Download PNG
+        // Скачать PNG
         function downloadPNG() {
             const canvas = document.createElement('canvas');
             const img = document.querySelector('#qrcode img');
@@ -1273,560 +418,71 @@
             link.click();
         }
 
-        // Download SVG
-        function downloadSVG() {
-            const svg = currentQR.svg;
-            const blob = new Blob([svg], {type: 'image/svg+xml'});
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.download = `qr-code-${Date.now()}.svg`;
-            link.href = url;
-            link.click();
-        }
-
-        // Save QR code to database
+        // Сохранить QR-код
         async function saveQRCode() {
             try {
                 await db.collection('qrcodes').add({
                     userId: currentUser.uid,
                     userName: userData.name,
                     content: currentQR.content,
-                    type: currentQR.type,
-                    color: currentQR.color,
                     size: currentQR.size,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    userIP: userIP,
-                    userLocation: userLocation
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
-                alert('QR code saved successfully!');
-                loadDashboard();
+                alert('QR-код сохранен!');
+                loadQRHistory();
             } catch (error) {
-                console.error('Error saving QR code:', error);
-                alert('Failed to save QR code');
+                alert('Ошибка сохранения');
             }
         }
 
-        // Load QR history
-        async function loadQRHistory(page = 1, search = '') {
-            let query = db.collection('qrcodes')
+        // Загрузка истории QR
+        async function loadQRHistory() {
+            const snapshot = await db.collection('qrcodes')
                 .where('userId', '==', currentUser.uid)
-                .orderBy('createdAt', 'desc');
+                .orderBy('createdAt', 'desc')
+                .get();
             
-            if (search) {
-                query = query.where('content', '>=', search)
-                           .where('content', '<=', search + '\uf8ff');
-            }
-            
-            const snapshot = await query.get();
-            qrHistory = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            
-            // Pagination
-            const itemsPerPage = 10;
-            const totalPages = Math.ceil(qrHistory.length / itemsPerPage);
-            const startIdx = (page - 1) * itemsPerPage;
-            const paginatedItems = qrHistory.slice(startIdx, startIdx + itemsPerPage);
-            
-            // Update table
             const table = document.getElementById('qr-history-table');
             table.innerHTML = '';
             
-            if (paginatedItems.length === 0) {
-                table.innerHTML = '<tr><td colspan="5" class="text-center">No QR codes found</td></tr>';
+            if (snapshot.empty) {
+                table.innerHTML = '<tr><td colspan="3" class="text-center">Нет сохраненных QR-кодов</td></tr>';
             } else {
-                paginatedItems.forEach(item => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${item.createdAt.toDate().toLocaleString()}</td>
-                        <td>${item.type}</td>
-                        <td class="text-truncate" style="max-width: 200px;">${item.content}</td>
-                        <td>${item.size}px</td>
+                        <td>${data.createdAt.toDate().toLocaleDateString()}</td>
+                        <td class="text-truncate" style="max-width: 200px;">${data.content}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary view-qr-btn" data-id="${item.id}">
-                                <i class="bi bi-eye"></i> View
+                            <button class="btn btn-sm btn-outline-primary view-qr-btn" data-id="${doc.id}">
+                                Просмотр
                             </button>
                         </td>
                     `;
                     table.appendChild(row);
                 });
             }
-            
-            // Update pagination
-            const pagination = document.getElementById('history-pagination');
-            pagination.innerHTML = '';
-            
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${i === page ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-                li.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    loadQRHistory(i, search);
-                });
-                pagination.appendChild(li);
-            }
-            
-            // Add event listeners to view buttons
-            document.querySelectorAll('.view-qr-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.getAttribute('data-id');
-                    const qr = qrHistory.find(item => item.id === id);
-                    viewQRCode(id, qr);
-                });
-            });
-            
-            // Search functionality
-            document.getElementById('history-search').addEventListener('input', (e) => {
-                loadQRHistory(1, e.target.value);
-            });
         }
 
-        // View QR code details
-        function viewQRCode(id, data) {
-            // Generate QR code for modal
-            const qr = qrcode(0, 'L');
-            qr.addData(data.content);
-            qr.make();
-            
-            const modalQR = document.getElementById('modal-qrcode');
-            modalQR.innerHTML = qr.createImgTag(4, 0);
-            
-            // Apply color
-            const img = modalQR.querySelector('img');
-            img.style.width = '200px';
-            img.style.height = '200px';
-            
-            // Set details
-            document.getElementById('modal-qr-date').textContent = data.createdAt.toDate().toLocaleString();
-            document.getElementById('modal-qr-type').textContent = data.type;
-            document.getElementById('modal-qr-content').textContent = data.content;
-            document.getElementById('modal-qr-size').textContent = `${data.size}px`;
-            document.getElementById('modal-qr-color').textContent = `#${data.color}`;
-            document.getElementById('modal-qr-user').textContent = data.userName;
-            
-            // Set download buttons
-            document.getElementById('modal-download-png').onclick = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                const link = document.createElement('a');
-                link.download = `qr-code-${id}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            };
-            
-            document.getElementById('modal-download-svg').onclick = () => {
-                const svg = qr.createSvgTag(4, 0);
-                const blob = new Blob([svg], {type: 'image/svg+xml'});
-                const url = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.download = `qr-code-${id}.svg`;
-                link.href = url;
-                link.click();
-            };
-            
-            // Show modal
-            viewQrModal.show();
-        }
-
-        // Load all users (admin only)
-        async function loadAllUsers(page = 1, search = '') {
+        // Загрузка всех пользователей
+        async function loadAllUsers() {
             if (userData.role !== 'admin') return;
             
-            let query = db.collection('users').orderBy('createdAt', 'desc');
-            
-            if (search) {
-                query = query.where('name', '>=', search)
-                           .where('name', '<=', search + '\uf8ff');
-            }
-            
-            const snapshot = await query.get();
-            allUsers = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            
-            // Pagination
-            const itemsPerPage = 10;
-            const totalPages = Math.ceil(allUsers.length / itemsPerPage);
-            const startIdx = (page - 1) * itemsPerPage;
-            const paginatedItems = allUsers.slice(startIdx, startIdx + itemsPerPage);
-            
-            // Update table
+            const snapshot = await db.collection('users').get();
             const table = document.getElementById('users-table');
             table.innerHTML = '';
             
-            if (paginatedItems.length === 0) {
-                table.innerHTML = '<tr><td colspan="7" class="text-center">No users found</td></tr>';
-            } else {
-                paginatedItems.forEach(user => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${user.id.substring(0, 8)}...</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</td>
-                        <td>${user.createdAt.toDate().toLocaleDateString()}</td>
-                        <td>${user.lastLogin ? user.lastLogin.toDate().toLocaleDateString() : 'Never'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary edit-user-btn" data-id="${user.id}">
-                                <i class="bi bi-pencil"></i> Edit
-                            </button>
-                        </td>
-                    `;
-                    table.appendChild(row);
-                });
-            }
-            
-            // Update pagination
-            const pagination = document.getElementById('users-pagination');
-            pagination.innerHTML = '';
-            
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${i === page ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-                li.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    loadAllUsers(i, search);
-                });
-                pagination.appendChild(li);
-            }
-            
-            // Add event listeners to edit buttons
-            document.querySelectorAll('.edit-user-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.getAttribute('data-id');
-                    const user = allUsers.find(u => u.id === id);
-                    editUser(id, user);
-                });
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${data.name}</td>
+                    <td>${data.email}</td>
+                    <td>${data.role}</td>
+                `;
+                table.appendChild(row);
             });
-        }
-
-        // Add new user (admin only)
-        async function addNewUser() {
-            if (userData.role !== 'admin') return;
-            
-            const name = document.getElementById('add-user-name').value;
-            const email = document.getElementById('add-user-email').value;
-            const password = document.getElementById('add-user-password').value;
-            const role = document.getElementById('add-user-role').value;
-            const message = document.getElementById('add-user-message');
-            
-            if (!name || !email || !password) {
-                message.textContent = 'Please fill in all fields';
-                message.style.color = 'red';
-                return;
-            }
-            
-            try {
-                // Create user in Firebase Auth
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                // Add user data to Firestore
-                await db.collection('users').doc(user.uid).set({
-                    name: name,
-                    email: email,
-                    role: role,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: null,
-                    active: true
-                });
-                
-                // Close modal and refresh users list
-                addUserModal.hide();
-                loadAllUsers();
-                
-                // Clear form
-                document.getElementById('add-user-form').reset();
-                message.textContent = '';
-            } catch (error) {
-                message.textContent = error.message;
-                message.style.color = 'red';
-            }
-        }
-
-        // Edit user (admin only)
-        function editUser(id, user) {
-            if (userData.role !== 'admin') return;
-            
-            document.getElementById('edit-user-id').value = id;
-            document.getElementById('edit-user-name').value = user.name;
-            document.getElementById('edit-user-email').value = user.email;
-            document.getElementById('edit-user-role').value = user.role;
-            document.getElementById('edit-user-active').checked = user.active !== false;
-            
-            editUserModal.show();
-        }
-
-        // Submit user edits (admin only)
-        document.getElementById('submit-edit-user').addEventListener('click', async () => {
-            if (userData.role !== 'admin') return;
-            
-            const id = document.getElementById('edit-user-id').value;
-            const name = document.getElementById('edit-user-name').value;
-            const email = document.getElementById('edit-user-email').value;
-            const role = document.getElementById('edit-user-role').value;
-            const active = document.getElementById('edit-user-active').checked;
-            const message = document.getElementById('edit-user-message');
-            
-            try {
-                // Update user in Firestore
-                await db.collection('users').doc(id).update({
-                    name: name,
-                    email: email,
-                    role: role,
-                    active: active
-                });
-                
-                // Close modal and refresh users list
-                editUserModal.hide();
-                loadAllUsers();
-                message.textContent = '';
-            } catch (error) {
-                message.textContent = error.message;
-                message.style.color = 'red';
-            }
-        });
-
-        // Load analytics (admin only)
-        async function loadAnalytics() {
-            if (userData.role !== 'admin') return;
-            
-            // Get all QR codes
-            const qrSnapshot = await db.collection('qrcodes').get();
-            allQRCodes = qrSnapshot.docs.map(doc => doc.data());
-            
-            // Prepare data for charts
-            const last30Days = Array(30).fill(0).map((_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - (29 - i));
-                return date.toISOString().split('T')[0];
-            });
-            
-            const qrCountByDay = Array(30).fill(0);
-            const qrTypes = {};
-            
-            allQRCodes.forEach(qr => {
-                const date = qr.createdAt.toDate().toISOString().split('T')[0];
-                const dayIndex = last30Days.indexOf(date);
-                if (dayIndex !== -1) {
-                    qrCountByDay[dayIndex]++;
-                }
-                
-                if (!qrTypes[qr.type]) {
-                    qrTypes[qr.type] = 0;
-                }
-                qrTypes[qr.type]++;
-            });
-            
-            // Activity chart
-            const activityCtx = document.getElementById('qr-activity-chart').getContext('2d');
-            new Chart(activityCtx, {
-                type: 'line',
-                data: {
-                    labels: last30Days.map(date => date.split('-')[2]),
-                    datasets: [{
-                        label: 'QR Codes Generated',
-                        data: qrCountByDay,
-                        backgroundColor: 'rgba(78, 115, 223, 0.05)',
-                        borderColor: 'rgba(78, 115, 223, 1)',
-                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Types chart
-            const typesCtx = document.getElementById('qr-types-chart').getContext('2d');
-            new Chart(typesCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(qrTypes),
-                    datasets: [{
-                        data: Object.values(qrTypes),
-                        backgroundColor: [
-                            'rgba(78, 115, 223, 0.8)',
-                            'rgba(28, 200, 138, 0.8)',
-                            'rgba(246, 194, 62, 0.8)',
-                            'rgba(231, 74, 59, 0.8)',
-                            'rgba(126, 142, 166, 0.8)'
-                        ],
-                        hoverBackgroundColor: [
-                            'rgba(78, 115, 223, 1)',
-                            'rgba(28, 200, 138, 1)',
-                            'rgba(246, 194, 62, 1)',
-                            'rgba(231, 74, 59, 1)',
-                            'rgba(126, 142, 166, 1)'
-                        ],
-                        hoverBorderColor: "rgba(234, 236, 244, 1)",
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    cutout: '70%'
-                }
-            });
-            
-            // User locations map
-            const usersSnapshot = await db.collection('users').get();
-            const userLocations = usersSnapshot.docs
-                .map(doc => doc.data().lastLocation)
-                .filter(loc => loc && loc.latitude && loc.longitude);
-            
-            if (userLocations.length > 0) {
-                const map = new google.maps.Map(document.getElementById('user-location-map'), {
-                    zoom: 2,
-                    center: {lat: 20, lng: 0},
-                    mapTypeId: 'terrain'
-                });
-                
-                userLocations.forEach(loc => {
-                    new google.maps.Marker({
-                        position: {lat: loc.latitude, lng: loc.longitude},
-                        map: map,
-                        title: `${loc.city}, ${loc.country}`
-                    });
-                });
-            } else {
-                document.getElementById('user-location-map').innerHTML = 
-                    '<div class="text-center p-4">No location data available</div>';
-            }
-        }
-
-        // Upload avatar
-        async function uploadAvatar(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            try {
-                // Upload to Firebase Storage
-                const storageRef = storage.ref(`avatars/${currentUser.uid}`);
-                const uploadTask = storageRef.put(file);
-                
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        // Progress
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        console.log('Upload is ' + progress + '% done');
-                    }, 
-                    (error) => {
-                        console.error('Upload error:', error);
-                        alert('Error uploading avatar');
-                    }, 
-                    async () => {
-                        // Complete
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        
-                        // Update user data with avatar URL
-                        await db.collection('users').doc(currentUser.uid).update({
-                            avatar: downloadURL
-                        });
-                        
-                        // Update UI
-                        document.getElementById('user-avatar-img').src = downloadURL;
-                        document.getElementById('profile-avatar').src = downloadURL;
-                        
-                        alert('Avatar updated successfully!');
-                    }
-                );
-            } catch (error) {
-                console.error('Error uploading avatar:', error);
-                alert('Failed to upload avatar');
-            }
-        }
-
-        // Load profile
-        async function loadProfile() {
-            // Split name into first and last
-            const nameParts = userData.name.split(' ');
-            document.getElementById('profile-firstname').value = nameParts[0] || '';
-            document.getElementById('profile-lastname').value = nameParts.slice(1).join(' ') || '';
-            
-            document.getElementById('profile-email').value = userData.email || '';
-            document.getElementById('profile-phone').value = userData.phone || '';
-            document.getElementById('profile-company').value = userData.company || '';
-        }
-
-        // Update profile
-        async function updateProfile(e) {
-            e.preventDefault();
-            
-            const firstName = document.getElementById('profile-firstname').value;
-            const lastName = document.getElementById('profile-lastname').value;
-            const phone = document.getElementById('profile-phone').value;
-            const company = document.getElementById('profile-company').value;
-            
-            try {
-                await db.collection('users').doc(currentUser.uid).update({
-                    name: `${firstName} ${lastName}`.trim(),
-                    phone: phone,
-                    company: company
-                });
-                
-                // Update UI
-                userData.name = `${firstName} ${lastName}`.trim();
-                document.getElementById('user-fullname').textContent = userData.name;
-                document.getElementById('user-avatar-img').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}`;
-                document.getElementById('profile-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}`;
-                
-                alert('Profile updated successfully!');
-            } catch (error) {
-                console.error('Error updating profile:', error);
-                alert('Failed to update profile');
-            }
-        }
-
-        // Update password
-        async function updatePassword(e) {
-            e.preventDefault();
-            
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            if (newPassword !== confirmPassword) {
-                alert('New passwords do not match');
-                return;
-            }
-            
-            try {
-                // Reauthenticate user
-                const credential = firebase.auth.EmailAuthProvider.credential(
-                    currentUser.email, 
-                    currentPassword
-                );
-                
-                await currentUser.reauthenticateWithCredential(credential);
-                
-                // Update password
-                await currentUser.updatePassword(newPassword);
-                
-                // Clear form
-                document.getElementById('password-form').reset();
-                
-                alert('Password updated successfully!');
-            } catch (error) {
-                console.error('Error updating password:', error);
-                alert(error.message);
-            }
         }
     </script>
 </body>
